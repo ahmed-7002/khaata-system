@@ -114,6 +114,7 @@ const S = {
   searchWrap: { position: "relative", padding: "0 20px" },
   searchInput: { width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.95)", border: "none", borderRadius: 12, padding: "13px 42px 13px 44px", fontSize: 15, color: "#0f172a", outline: "none", boxShadow: "0 2px 12px rgba(0,0,0,0.1)" },
   searchClearBtn: { position: "absolute", right: 34, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#94a3b8", fontSize: 16, lineHeight: 1, padding: "4px", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 6, transition: "color 0.15s" },
+  eyeBtn: { position: "absolute", right: 14, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#94a3b8", fontSize: 18, lineHeight: 1, padding: "4px", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 6, transition: "color 0.15s" },
   searchIcon: { position: "absolute", left: 34, top: "50%", transform: "translateY(-50%)", color: "#6ee7b7", fontSize: 18, pointerEvents: "none" },
 
   filterPillRow: { display: "flex", gap: 8, padding: "10px 20px 14px" },
@@ -309,6 +310,7 @@ export default function App() {
 
   const [isLoggedIn, setIsLoggedIn]     = useState(() => localStorage.getItem("khaata_session") === "1");
   const [loginForm, setLoginForm]       = useState({ user: "", pass: "" });
+  const [showPass, setShowPass]         = useState(false);
   const [loginError, setLoginError]     = useState("");
 
   const [settings, setSettings]         = useState(null);
@@ -420,15 +422,28 @@ export default function App() {
               onKeyDown={e => e.key === "Enter" && handleLogin()}
             />
             <label style={S.label}>Password</label>
-            <input
-              style={S.input}
-              placeholder="Enter password"
-              type="password"
-              autoComplete="current-password"
-              value={loginForm.pass}
-              onChange={e => setLoginForm(p => ({ ...p, pass: e.target.value }))}
-              onKeyDown={e => e.key === "Enter" && handleLogin()}
-            />
+            <div style={{ position: "relative" }}>
+              <input
+                style={{ ...S.input, paddingRight: 44, marginBottom: 0 }}
+                placeholder="Enter password"
+                type={showPass ? "text" : "password"}
+                autoComplete="current-password"
+                value={loginForm.pass}
+                onChange={e => setLoginForm(p => ({ ...p, pass: e.target.value }))}
+                onKeyDown={e => e.key === "Enter" && handleLogin()}
+              />
+              <button
+                style={S.eyeBtn}
+                type="button"
+                onClick={() => setShowPass(p => !p)}
+                title={showPass ? "Hide password" : "Show password"}
+                onMouseEnter={e => e.currentTarget.style.color = "#059669"}
+                onMouseLeave={e => e.currentTarget.style.color = "#94a3b8"}
+              >
+                {showPass ? "🙈" : "👁️"}
+              </button>
+            </div>
+            <div style={{ marginBottom: 14 }} />
             <button style={S.submitBtn("#059669")} onClick={handleLogin}>
               🔐 Login to Khaata Book
             </button>
