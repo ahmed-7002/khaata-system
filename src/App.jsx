@@ -112,7 +112,8 @@ const S = {
   addBtn: { background: "#fff", color: "#059669", border: "none", borderRadius: 10, padding: "10px 16px", fontWeight: 700, fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, boxShadow: "0 2px 8px rgba(0,0,0,0.12)" },
 
   searchWrap: { position: "relative", padding: "0 20px" },
-  searchInput: { width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.95)", border: "none", borderRadius: 12, padding: "13px 16px 13px 44px", fontSize: 15, color: "#0f172a", outline: "none", boxShadow: "0 2px 12px rgba(0,0,0,0.1)" },
+  searchInput: { width: "100%", boxSizing: "border-box", background: "rgba(255,255,255,0.95)", border: "none", borderRadius: 12, padding: "13px 42px 13px 44px", fontSize: 15, color: "#0f172a", outline: "none", boxShadow: "0 2px 12px rgba(0,0,0,0.1)" },
+  searchClearBtn: { position: "absolute", right: 34, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", cursor: "pointer", color: "#94a3b8", fontSize: 16, lineHeight: 1, padding: "4px", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 6, transition: "color 0.15s" },
   searchIcon: { position: "absolute", left: 34, top: "50%", transform: "translateY(-50%)", color: "#6ee7b7", fontSize: 18, pointerEvents: "none" },
 
   filterPillRow: { display: "flex", gap: 8, padding: "10px 20px 14px" },
@@ -431,7 +432,9 @@ export default function App() {
             <button style={S.submitBtn("#059669")} onClick={handleLogin}>
               🔐 Login to Khaata Book
             </button>
-            
+            <p style={{ textAlign: "center", fontSize: 12, color: "#94a3b8", marginTop: 20, marginBottom: 0 }}>
+              Credentials are set via <code style={{ background: "#f1f5f9", padding: "2px 6px", borderRadius: 4 }}>VITE_ADMIN_USER</code> &amp; <code style={{ background: "#f1f5f9", padding: "2px 6px", borderRadius: 4 }}>VITE_ADMIN_PASS</code> in your <code style={{ background: "#f1f5f9", padding: "2px 6px", borderRadius: 4 }}>.env</code> file.
+            </p>
           </div>
         </div>
       </>
@@ -587,6 +590,17 @@ export default function App() {
                 value={search}
                 onChange={e => setSearch(e.target.value)}
               />
+              {search && (
+                <button
+                  style={S.searchClearBtn}
+                  onClick={() => { setSearch(""); searchRef.current?.focus(); }}
+                  title="Clear search"
+                  onMouseEnter={e => e.currentTarget.style.color = "#475569"}
+                  onMouseLeave={e => e.currentTarget.style.color = "#94a3b8"}
+                >
+                  ✕
+                </button>
+              )}
             </div>
           </div>
 
