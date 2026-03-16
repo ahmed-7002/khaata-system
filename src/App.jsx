@@ -431,9 +431,7 @@ export default function App() {
             <button style={S.submitBtn("#059669")} onClick={handleLogin}>
               🔐 Login to Khaata Book
             </button>
-            <p style={{ textAlign: "center", fontSize: 12, color: "#94a3b8", marginTop: 20, marginBottom: 0 }}>
-              Credentials are set via <code style={{ background: "#f1f5f9", padding: "2px 6px", borderRadius: 4 }}>VITE_ADMIN_USER</code> &amp; <code style={{ background: "#f1f5f9", padding: "2px 6px", borderRadius: 4 }}>VITE_ADMIN_PASS</code> in your <code style={{ background: "#f1f5f9", padding: "2px 6px", borderRadius: 4 }}>.env</code> file.
-            </p>
+            
           </div>
         </div>
       </>
