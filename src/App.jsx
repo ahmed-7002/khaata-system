@@ -45,54 +45,36 @@ function openCloudinaryWidget(onSuccess) {
 }
 
 // ─── WHATSAPP REMINDER / STATEMENT ──────────────────────────
-// transactions: full transactions array for the app
-// isCleared:    true when the customer's balance is zero
 function sendWhatsAppReminder(customer, balance, currency, shopName, transactions = [], isCleared = false) {
-  // 1. Strip everything that isn't a number
   let phone = customer.phone?.replace(/\D/g, "");
-
-  // 2. Format for WhatsApp (ensure it starts with 92 and remove leading 0)
   if (phone.startsWith("0")) {
     phone = "92" + phone.substring(1);
   } else if (!phone.startsWith("92") && phone.length === 10) {
     phone = "92" + phone;
   }
-
-  // 3. Find the most recent CREDIT (udhaar) transaction that has a receipt_url.
-  //    Payment receipts are excluded — the reminder is about what is owed,
-  //    so only the debt-side (credit) receipt is relevant.
   const latestReceipt = transactions
     .filter(t => t.customer_id === customer.id && t.type === "credit" && t.receipt_url)
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
 
   let message;
-
   if (isCleared) {
-    // ── "Send Statement" mode: balance is zero ──────────────
-    // Count total payments and credits for a brief summary
     const customerTxns = transactions.filter(t => t.customer_id === customer.id);
     const totalPaid    = customerTxns
       .filter(t => t.type === "payment")
       .reduce((sum, t) => sum + Number(t.amount), 0);
-
     message =
       `Hello ${customer.name}, this is a statement from ${shopName}. ` +
       `Your account is fully cleared — thank you for your payment! ` +
       `Total amount settled: ${currency} ${totalPaid.toLocaleString()}. ` +
       `We appreciate your business and look forward to serving you again.`;
-    // No receipt link attached to clearance statements — intentionally omitted.
   } else {
-    // ── Standard debt reminder mode ─────────────────────────
     message =
       `Hello ${customer.name}, this is a reminder from ${shopName} that your current balance is ` +
       `${currency} ${Math.abs(balance).toLocaleString()}. Please clear it at your earliest convenience.`;
-
     if (latestReceipt) {
       message += ` You can view your latest receipt here: ${latestReceipt.receipt_url}`;
     }
   }
-
-  // 4. Encode the full message (including any URL) before passing to WhatsApp
   const url = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`;
   window.open(url, "_blank");
 }
@@ -174,9 +156,7 @@ const S = {
 
   editBtn: { display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,0.18)", color: "#fff", border: "1.5px solid rgba(255,255,255,0.35)", borderRadius: 8, padding: "5px 11px", fontWeight: 700, fontSize: 12, cursor: "pointer", marginTop: 8, backdropFilter: "blur(4px)", letterSpacing: 0.2 },
 
-  // WhatsApp button — debt reminder (red-ish green)
   waBtn: { display: "flex", alignItems: "center", gap: 6, background: "#25D366", color: "#fff", border: "none", borderRadius: 10, padding: "9px 14px", fontWeight: 700, fontSize: 13, cursor: "pointer", boxShadow: "0 2px 8px rgba(37,211,102,0.35)", marginTop: 10, whiteSpace: "nowrap" },
-  // WhatsApp button — "Send Statement" mode (distinct teal shade to signal different action)
   waStatementBtn: { display: "flex", alignItems: "center", gap: 6, background: "#0ea5e9", color: "#fff", border: "none", borderRadius: 10, padding: "9px 14px", fontWeight: 700, fontSize: 13, cursor: "pointer", boxShadow: "0 2px 8px rgba(14,165,233,0.35)", marginTop: 10, whiteSpace: "nowrap" },
 
   actionRow: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, padding: "12px 16px", borderBottom: "1px solid #f1f5f9" },
@@ -224,7 +204,6 @@ const S = {
   deleteBtn: { background: "#fef2f2", border: "1.5px solid #fecaca", borderRadius: 8, padding: "5px 10px", color: "#ef4444", fontSize: 12, fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap" },
   receiptThumb: { width: "100%", maxHeight: 180, objectFit: "cover", borderRadius: 10, marginBottom: 14, border: "2px solid #a7f3d0", display: "block" },
   receiptThumbTxn: { width: "100%", maxHeight: 140, objectFit: "cover", borderRadius: 8, marginTop: 8, border: "1.5px solid #e2e8f0", display: "block", cursor: "pointer" },
-  // ── Confirmation Dialog (centred, Windows-style) ──
   confirmOverlay: {
     position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
     display: "flex", alignItems: "center", justifyContent: "center",
@@ -251,7 +230,6 @@ const S = {
     borderRadius: 14, padding: "15px", fontWeight: 800, fontSize: 15, cursor: "pointer",
     boxShadow: "0 4px 16px rgba(239,68,68,0.35)",
   },
-  // ── Toast notification ──
   toastWrap: (visible) => ({
     position: "fixed", bottom: 32, left: "50%", transform: `translateX(-50%) translateY(${visible ? 0 : 16}px)`,
     opacity: visible ? 1 : 0, transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)",
@@ -282,6 +260,98 @@ function WhatsAppIcon({ size = 16 }) {
   );
 }
 
+// ─── RESPONSIVE STYLES (injected as a <style> block) ─────────
+// This keeps all responsive logic in CSS where it belongs,
+// avoids re-render churn from resize listeners, and works
+// cleanly alongside the existing inline-style S object.
+const RESPONSIVE_CSS = `
+  /* ── Hamburger button: hidden on desktop ── */
+  .kb-hamburger {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.15);
+    border: 1.5px solid rgba(255,255,255,0.3);
+    border-radius: 10px;
+    padding: 8px 10px;
+    cursor: pointer;
+    color: #fff;
+    font-size: 22px;
+    line-height: 1;
+    backdrop-filter: blur(4px);
+  }
+
+  /* ── Logout button: visible on desktop, hidden on mobile ── */
+  .kb-logout-desktop {
+    display: flex;
+  }
+
+  /* ── Filter pills row: visible on desktop, hidden on mobile ── */
+  .kb-filter-row-desktop {
+    display: flex;
+  }
+
+  /* ── Mobile drawer: always hidden until toggled ── */
+  .kb-mobile-drawer {
+    display: none;
+    flex-direction: column;
+    gap: 0;
+    background: rgba(4, 120, 87, 0.97);
+    border-top: 1px solid rgba(255,255,255,0.12);
+    padding: 0 20px;
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.28s ease, padding 0.28s ease;
+  }
+  .kb-mobile-drawer.open {
+    max-height: 240px;
+    padding: 14px 20px 6px;
+  }
+
+  /* ── Mobile drawer filter pills ── */
+  .kb-drawer-filter-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+
+  /* ── Mobile drawer logout button ── */
+  .kb-drawer-logout {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.12);
+    border: 1.5px solid rgba(255,255,255,0.25);
+    border-radius: 10px;
+    padding: 10px 14px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    width: 100%;
+    margin-bottom: 10px;
+    font-family: inherit;
+    letter-spacing: 0.2px;
+  }
+  .kb-drawer-logout:hover {
+    background: rgba(255,255,255,0.2);
+  }
+
+  @media (max-width: 768px) {
+    /* Show hamburger, hide desktop controls */
+    .kb-hamburger          { display: flex; }
+    .kb-logout-desktop     { display: none !important; }
+    .kb-filter-row-desktop { display: none !important; }
+
+    /* Enable the drawer (open/close is handled by .open class) */
+    .kb-mobile-drawer { display: flex; }
+
+    /* Fix: restore bottom padding lost when filter pills are hidden */
+    .kb-header-mobile-pad { padding-bottom: 20px; }
+  }
+`;
+
 // ─── MAIN APP ────────────────────────────────────────────────
 export default function App() {
   const [customers, setCustomers]       = useState([]);
@@ -298,15 +368,18 @@ export default function App() {
   const [toast, setToast]               = useState({ visible: false, message: "", type: "success" });
   const toastTimer = useRef(null);
 
+  // ── NEW: mobile menu open/close state ──────────────────────
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   const showToast = (message, type = "success") => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
     setToast({ visible: true, message, type });
     toastTimer.current = setTimeout(() => setToast(t => ({ ...t, visible: false })), 3000);
   };
 
-  const [confirmDelete, setConfirmDelete]           = useState(null); // holds customer object or null
-  const [confirmRemoveReceipt, setConfirmRemoveReceipt] = useState(null); // holds txn id or null
-  const [confirmLogout, setConfirmLogout]           = useState(false);  // logout confirm flag
+  const [confirmDelete, setConfirmDelete]           = useState(null);
+  const [confirmRemoveReceipt, setConfirmRemoveReceipt] = useState(null);
+  const [confirmLogout, setConfirmLogout]           = useState(false);
 
   const [isLoggedIn, setIsLoggedIn]     = useState(() => localStorage.getItem("khaata_session") === "1");
   const [loginForm, setLoginForm]       = useState({ user: "", pass: "" });
@@ -333,7 +406,10 @@ export default function App() {
     }
   };
 
-  const handleLogout = () => setConfirmLogout(true);
+  const handleLogout = () => {
+    setIsMenuOpen(false);  // close drawer before showing confirm dialog
+    setConfirmLogout(true);
+  };
 
   const handleFinalLogout = () => {
     setConfirmLogout(false);
@@ -447,7 +523,6 @@ export default function App() {
             <button style={S.submitBtn("#059669")} onClick={handleLogin}>
               🔐 Login to Khaata Book
             </button>
-            
           </div>
         </div>
       </>
@@ -534,7 +609,7 @@ export default function App() {
 
   const handleDeleteCustomer = (e, customer) => {
     e.stopPropagation();
-    setConfirmDelete(customer);  // open the confirmation sheet
+    setConfirmDelete(customer);
   };
 
   const handleFinalDelete = async () => {
@@ -550,7 +625,7 @@ export default function App() {
   };
 
   const handleRemoveReceipt = (txnId) => {
-    setConfirmRemoveReceipt(txnId); // open confirmation sheet
+    setConfirmRemoveReceipt(txnId);
   };
 
   const handleFinalRemoveReceipt = async () => {
@@ -567,15 +642,22 @@ export default function App() {
   const selectedBalance = selected ? balance(selected.id) : 0;
   const shopName = settings?.country ? `Khaata Book (${settings.country})` : "Khaata Book";
 
+  // ── Filter pill labels (shared between desktop row and mobile drawer) ──
+  const filterLabels = { All: "👥 All", Pending: "🔴 Pending", Cleared: "✅ Cleared" };
+
   return (
     <>
+      {/* ── Inject responsive CSS ── */}
+      <style>{RESPONSIVE_CSS}</style>
+
       <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
       <script src="https://widget.cloudinary.com/v2.0/global/all.js" async />
 
       <div style={S.app}>
-        <div style={S.stickyTop}>
+        <div style={S.stickyTop} className="kb-header-mobile-pad">
           <div style={S.header}>
             <div style={S.headerTop}>
+              {/* ── Logo: always visible ── */}
               <div style={S.logo}>
                 <div style={S.logoIcon}>📒</div>
                 <div>
@@ -585,15 +667,38 @@ export default function App() {
                   </p>
                 </div>
               </div>
+
+              {/* ── Right-side controls ── */}
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                {/* "+ New Customer" button: always visible */}
                 <button style={S.addBtn} onClick={() => openModal("add_customer")}>
                   <span>＋</span> New Customer
                 </button>
-                <button style={S.logoutBtn} onClick={handleLogout} title="Logout">
+
+                {/* Logout button: desktop only (hidden on mobile via CSS) */}
+                <button
+                  className="kb-logout-desktop"
+                  style={S.logoutBtn}
+                  onClick={handleLogout}
+                  title="Logout"
+                >
                   <LogOut size={15} />
+                </button>
+
+                {/* Hamburger button: mobile only (hidden on desktop via CSS) */}
+                <button
+                  className="kb-hamburger"
+                  onClick={() => setIsMenuOpen(o => !o)}
+                  title={isMenuOpen ? "Close menu" : "Open menu"}
+                  aria-expanded={isMenuOpen}
+                  aria-label="Toggle menu"
+                >
+                  {isMenuOpen ? "✕" : "≡"}
                 </button>
               </div>
             </div>
+
+            {/* ── Search bar: always visible ── */}
             <div style={S.searchWrap}>
               <span style={S.searchIcon}>🔍</span>
               <input
@@ -617,16 +722,39 @@ export default function App() {
             </div>
           </div>
 
-          <div style={S.filterPillRow}>
+          {/* ── Desktop filter pills row (hidden on mobile via CSS) ── */}
+          <div className="kb-filter-row-desktop" style={S.filterPillRow}>
             {["All", "Pending", "Cleared"].map(f => (
               <button
                 key={f}
                 style={S.filterPill(activeFilter === f)}
                 onClick={() => setActiveFilter(f)}
               >
-                {f === "All" ? "👥 All" : f === "Pending" ? "🔴 Pending" : "✅ Cleared"}
+                {filterLabels[f]}
               </button>
             ))}
+          </div>
+
+          {/* ── Mobile collapsible drawer (visible only on mobile) ── */}
+          <div className={`kb-mobile-drawer${isMenuOpen ? " open" : ""}`}>
+            {/* Filter pills inside drawer */}
+            <div className="kb-drawer-filter-row">
+              {["All", "Pending", "Cleared"].map(f => (
+                <button
+                  key={f}
+                  style={S.filterPill(activeFilter === f)}
+                  onClick={() => { setActiveFilter(f); setIsMenuOpen(false); }}
+                >
+                  {filterLabels[f]}
+                </button>
+              ))}
+            </div>
+
+            {/* Logout button inside drawer */}
+            <button className="kb-drawer-logout" onClick={handleLogout}>
+              <LogOut size={16} />
+              Log Out
+            </button>
           </div>
         </div>
 
@@ -689,38 +817,21 @@ export default function App() {
                   </div>
                   <p style={{ ...S.detailPhone, margin: 0 }}>📞 {selected.phone}</p>
 
-                  {/* ── WhatsApp Button: Reminder vs Statement ── */}
                   {selectedBalance > 0 ? (
-                    // Outstanding balance → red-flavoured reminder
                     <button
                       style={S.waBtn}
                       onClick={() =>
-                        sendWhatsAppReminder(
-                          selected,
-                          selectedBalance,
-                          settings?.currency || "",
-                          shopName,
-                          transactions,
-                          false          // isCleared = false
-                        )
+                        sendWhatsAppReminder(selected, selectedBalance, settings?.currency || "", shopName, transactions, false)
                       }
                     >
                       <WhatsAppIcon size={15} />
                       Send Reminder
                     </button>
                   ) : (
-                    // Balance cleared → teal "Send Statement" button (active, not disabled)
                     <button
                       style={S.waStatementBtn}
                       onClick={() =>
-                        sendWhatsAppReminder(
-                          selected,
-                          selectedBalance,
-                          settings?.currency || "",
-                          shopName,
-                          transactions,
-                          true           // isCleared = true
-                        )
+                        sendWhatsAppReminder(selected, selectedBalance, settings?.currency || "", shopName, transactions, true)
                       }
                       title="Send a cleared-account statement via WhatsApp"
                     >
@@ -958,6 +1069,7 @@ export default function App() {
           </div>
         </div>
       )}
+
       {/* ─── REMOVE RECEIPT CONFIRMATION SHEET ─── */}
       {confirmRemoveReceipt && (
         <div style={S.confirmOverlay} onClick={() => setConfirmRemoveReceipt(null)}>
