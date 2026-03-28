@@ -351,10 +351,8 @@ const RESPONSIVE_CSS = `
     .kb-header-mobile-pad { padding-bottom: 20px; }
 
     /* Fix: shrink header text and button on small screens */
-    .kb-logo-title { font-size: 18px !important; white-space: nowrap !important; }
-    .kb-add-btn    { font-size: 13px !important; padding: 8px 10px !important; white-space: nowrap !important; }
-    .kb-header-right { gap: 4px !important; }
-    .kb-logo-icon  { width: 32px !important; height: 32px !important; font-size: 16px !important; }
+    .kb-logo-title { font-size: 18px !important; }
+    .kb-add-btn    { font-size: 13px !important; padding: 8px 10px !important; }
   }
 `;
 
@@ -665,7 +663,7 @@ export default function App() {
             <div style={S.headerTop}>
               {/* ── Logo: always visible ── */}
               <div style={S.logo}>
-                <div style={S.logoIcon} className="kb-logo-icon">📒</div>
+                <div style={S.logoIcon}>📒</div>
                 <div>
                   <p style={S.logoTitle} className="kb-logo-title">Khaata Book</p>
                   <p style={{ ...S.logoSub, margin: 0 }}>
@@ -675,7 +673,7 @@ export default function App() {
               </div>
 
               {/* ── Right-side controls ── */}
-              <div style={{ display: "flex", gap: 8, alignItems: "center" }} className="kb-header-right">
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                 {/* "+ New Customer" button: always visible */}
                 <button style={S.addBtn} className="kb-add-btn" onClick={() => openModal("add_customer")}>
                   <span>＋</span> New Customer
