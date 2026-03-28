@@ -349,6 +349,10 @@ const RESPONSIVE_CSS = `
 
     /* Fix: restore bottom padding lost when filter pills are hidden */
     .kb-header-mobile-pad { padding-bottom: 20px; }
+
+    /* Fix: shrink header text and button on small screens */
+    .kb-logo-title { font-size: 18px !important; }
+    .kb-add-btn    { font-size: 13px !important; padding: 8px 10px !important; }
   }
 `;
 
@@ -661,7 +665,7 @@ export default function App() {
               <div style={S.logo}>
                 <div style={S.logoIcon}>📒</div>
                 <div>
-                  <p style={S.logoTitle}>Khaata Book</p>
+                  <p style={S.logoTitle} className="kb-logo-title">Khaata Book</p>
                   <p style={{ ...S.logoSub, margin: 0 }}>
                     {settings ? `${settings.country} · ${settings.currency}` : "Digital Udhaar Ledger"}
                   </p>
@@ -671,7 +675,7 @@ export default function App() {
               {/* ── Right-side controls ── */}
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                 {/* "+ New Customer" button: always visible */}
-                <button style={S.addBtn} onClick={() => openModal("add_customer")}>
+                <button style={S.addBtn} className="kb-add-btn" onClick={() => openModal("add_customer")}>
                   <span>＋</span> New Customer
                 </button>
 
